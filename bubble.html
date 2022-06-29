@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>测试3D气泡图</title>
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="mapbox-gl-dev.js"></script>
+
+<style>
+	body { margin: 0; padding: 0; }
+	#map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    #title {
+        position: absolute;
+        color: white;
+        left: 40%;
+        top: 30px;
+        text-align: center;
+        width: 500px;
+        z-index: 2;
+    }
+    #title > h3 {
+        margin: 10px 0;
+        letter-spacing: 0.1em;
+    }
+</style>
+</head>
+<body>
+    <!-- <div id="title">
+        <h3>3D气泡图</h3>
+        <h6>mapboxgl-entity-dubble</h6>
+    </div> -->
+    <div id="map"></div>
+
+
+<script>
+	mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4M29iazA2Z2gycXA4N2pmbDZmangifQ.-g_vE53SD2WrJ6tFX7QHmA';
+    url = "http://127.0.0.1:8090/iserver/services/map-china400/rest/maps/ChinaDark";
+    var map, popup;
+    var attribution = "3d-dubble-demo";
+    map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/yundaqi/cl3wqtr2t000h15oo8spcl558',
+        center: [104.038567,30.650149],
+        zoom: 12,
+        pitch: 60,
+        bearing: 0
+    });
+    map.addControl(new mapboxgl.NavigationControl(), 'top-left');
+
+    // 默认气泡大小
+    var size = 150;
+    // ES5:canvas气泡对象构造函数   ES6可用class构造
+    var symbolObject = function (){
+        return {
+                width: size,
+                height: size,
+                color: 'red',
+                data: new Uint8Array(size * size * 4),
+                // 当map加载后直接自动调用创建canvas气泡
+                onAdd: function () {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = this.width;
+                    canvas.height = this.height;
+                    //画笔
+                    this.context = canvas.getContext('2d');
+                },
+                // 修改颜色属性返回对象
+                setColor: function(colors){
+                    this.color = colors;
+                    return this;
+                },
+                //重复调用绘制
+                render: function () {
+                    var duration = 1000;
+                    var t = (performance.now() % duration) / duration;
+
+                    //气泡整体半径 (必须小于size大小，否则超出边框部分不显示)
+                    var radius = (size / 2) * 0.3;
+                    //外圈光晕大小
+                    var outerRadius = (size / 2) * 0.55 * t + radius;
+                    var context = this.context;
+
+                    // 绘制外圈光晕
+                    context.clearRect(0, 0, this.width, this.height);
+                    context.beginPath();
+                    context.arc(
+                        this.width / 2,
+                        this.height / 2,
+                        outerRadius,
+                        0,
+                        Math.PI * 2
+                    );
+                    //外圈光晕颜色 + 透明度
+                    context.fillStyle = 'rgba(130, 130, 130,' + (1 - t) + ')';
+                    context.fill();
+
+                    // 绘制内圈实心圆
+                    context.beginPath();
+                    context.arc(
+                        this.width / 2,
+                        this.height / 2,
+                        radius,
+                        0,
+                        Math.PI * 2
+                    );
+                    //添加文字
+                    context.font = "20px 黑体";
+                    context.textAlign = "bottom";
+                    context.strokeText("200万", 100, 100);  
+                    //实心圆颜色
+                    context.fillStyle = this.color; 
+                    //实心圆边框颜色
+                    context.strokeStyle = this.color;
+                    
+                    //实心圆边框宽度
+                    context.lineWidth = 2 + 4 * (1 - t);
+                    context.fill();
+                    //context.stroke();
+
+                    // 更新canvas高度、宽度数据
+                    this.data = context.getImageData(
+                        0,
+                        0,
+                        this.width,
+                        this.height
+                    ).data;
+
+                    // 重复绘制每一帧，动画效果
+                    map.triggerRepaint();
+
+                    // 绘制完成后返回true
+                    return true;
+                },
+                
+            }
+    };
+
+
+    var json1 = {
+        'type': 'FeatureCollection',
+        'features': [
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.042723,30.667576]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.061695,30.590509]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.165755,30.65515]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.171504,30.707824]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.069744,30.760966]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            }
+        ]
+    };
+
+    var json2 = {
+        'type': 'FeatureCollection',
+        'features': [
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.045022,30.639242]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.113437,30.644214]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.09389,30.68795]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.052496,30.698882]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.02835,30.667079]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            }
+        ]
+    };
+
+    var json3 = {
+        'type': 'FeatureCollection',
+        'features': [
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.013402,30.758484]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [103.961085,30.676024]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.065719,30.563646]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.069744,30.797205]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            },
+            {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [104.26579,30.644711]
+                },
+                "properties":{
+                    "id": 1,
+                    "name": "p1",
+                    'color':'yellow'
+                }
+            }
+        ]
+    };
+
+
+    map.on('load', function () {
+        map.addImage('symbolObject1', new symbolObject().setColor("#ccc"), { pixelRatio: 2 });
+        map.addImage('symbolObject2', new symbolObject().setColor('rgba(255, 100, 100, 1)'), { pixelRatio: 1.5 });
+        map.addImage('symbolObject3', new symbolObject().setColor('#69b779'), { pixelRatio: 2.5 });
+
+        map.addSource('points1', {
+            'type': 'geojson',
+            'data': json1
+        });
+
+        map.addSource('points2', {
+            'type': 'geojson',
+            'data': json2
+        });
+
+        map.addSource('points3', {
+            'type': 'geojson',
+            'data': json3
+        });
+
+        map.addLayer({
+            'id': 'points1',
+            'type': 'symbol',
+            'source': 'points1',
+            'layout': {
+                'icon-image': 'symbolObject1',
+                "symbol-z-offset": 5000.0
+            }
+        });
+        
+        map.addLayer({
+            'id': 'points2',
+            'type': 'symbol',
+            'source': 'points2',
+            'layout': {
+                'icon-image': 'symbolObject2',
+                "symbol-z-offset": 9000.0
+            }
+        });
+
+        map.addLayer({
+            'id': 'points3',
+            'type': 'symbol',
+            'source': 'points3',
+            'layout': {
+                'icon-image': 'symbolObject3',
+                "symbol-z-offset": 3000.0
+            }
+        });
+
+
+    });
+
+    //map.showCollisionBoxes = true;
+</script>
+
+</body>
+</html>
